@@ -12,15 +12,29 @@ namespace CLTimeAssigner
     {
         static void Main(string[] args)
         {
-            if (args.Length != 1 || string.IsNullOrEmpty(args[0]))
+            if (args.Length == 0)
             {
-                Console.WriteLine("Please drop a .json file.");
+                ShowUsage();
                 return;
             }
 
-            string filePath = args[0];
+            string filePath = null;
+            string outputFilePath = null;
 
-            if (Path.GetExtension(filePath).ToLower() != ".json")
+            for (int i = 0; i < args.Length; i++)
+            {
+                if (args[i] == "-o" && i + 1 < args.Length)
+                {
+                    outputFilePath = args[i + 1];
+                    i++; // Skip the next argument as it is the output file path
+                }
+                else
+                {
+                    filePath = args[i];
+                }
+            }
+
+            if (string.IsNullOrEmpty(filePath) || Path.GetExtension(filePath).ToLower() != ".json")
             {
                 Console.WriteLine("Please drop a .json file.");
                 return;
@@ -44,11 +58,23 @@ namespace CLTimeAssigner
             };
             string outputJson = JsonConvert.SerializeObject(root, settings);
 
-            // 出力ファイルパスを生成
-            string outputFilePath = Path.Combine(Path.GetDirectoryName(filePath), "output_" + Path.GetFileName(filePath));
+            if (string.IsNullOrEmpty(outputFilePath))
+            {
+                string suffix = "assigned";
+                outputFilePath = Path.Combine(Path.GetDirectoryName(filePath), Path.GetFileNameWithoutExtension(filePath) + "-" + suffix + ".json");
+            }
+
             File.WriteAllText(outputFilePath, outputJson);
 
             Console.WriteLine("done.");
+        }
+
+        static void ShowUsage()
+        {
+            string programName = Path.GetFileNameWithoutExtension(System.Diagnostics.Process.GetCurrentProcess().MainModule.FileName);
+            Console.WriteLine($"Usage: {programName} <input.json> [-o <output.json>]");
+            Console.WriteLine("  <input.json>    The input JSON file.");
+            Console.WriteLine("  -o <output.json>  (Optional) The output JSON file.");
         }
 
         static void SheetCalcTime(dynamic node)
